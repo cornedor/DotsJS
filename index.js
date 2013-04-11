@@ -51,7 +51,7 @@ var Website = function () {
                     server.fs.readFile(errorTemplateUrl, 'utf-8', function (error, data) {
                         var output = data.split("{{title}}").join("500 - " + e.message)
                             .split("{{content}}").join(e.stack);
-                        res.writeHead(500, "text/html");
+                        res.writeHead(500, {'Content-Type': 'text/html'});
                         res.end(output);
                         output = null;
                         server.sendmail({
@@ -81,7 +81,19 @@ var Website = function () {
     function getTemplateData(url, type) {
         server.fs.readFile('app/view/' + url, 'utf-8', function (error, data) {
             if (error) {
-                res.end('404: ' + error.message);
+                var errorTemplateUrl = server.path.join(process.cwd(), 'app/view/error.html'),
+                    message = error.message;
+                server.path.exists(errorTemplateUrl, function(exists) {
+                    server.fs.readFile(errorTemplateUrl, 'utf-8', function (error, data) {
+                        var output = data.split("{{title}}").join("404 - Sorry page not found.")
+                            .split("{{content}}").join(message);
+                        res.writeHead(404, {'Content-Type': 'text/html'});
+                        res.end(output);
+                        output = null;
+                        nullOut();
+                    });
+                    errorTemplateUrl = null;
+                });
             } else {
                 templateData[type] = data;
                 templateDataLoaded();
