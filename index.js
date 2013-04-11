@@ -173,9 +173,6 @@ server = (function () {
                 var parsedUrl = parseUrl(req),
                     cacheIndex = server.cached.indexOf(parsedUrl.host + parsedUrl.port + parsedUrl.url + parsedUrl.get),
                     site;
-                if (parsedUrl.url === "/favicon.ico") {
-                    return;
-                }
                 if (cacheIndex === -1) {
                     site = new Website();
                     site.init(req, res, parsedUrl);
