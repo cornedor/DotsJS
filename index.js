@@ -1,7 +1,8 @@
 /*jslint node: true */
 
-const PORT          = 8080;
+const PORT          = 8081;
 const HOST          = "0.0.0.0";
+const EMAIL         = "contact@corne.info";
 
 const DB_HOST       = "localhost";
 const DB_USER       = "root";
@@ -42,7 +43,29 @@ var Website = function () {
     function templateDataLoaded() {
         filesToLoad -= 1;
         if (filesToLoad === 0) {
-            templateData.config.filter(templateData.dom, server, templateFiltered, res, req);
+            try {
+                templateData.config.filter(templateData.dom, server, templateFiltered, res, req);
+            } catch (e) {
+                var errorTemplateUrl = server.path.join(process.cwd(), 'app/view/error.html');
+                server.path.exists(errorTemplateUrl, function(exists) {
+                    server.fs.readFile(errorTemplateUrl, 'utf-8', function (error, data) {
+                        var output = data.split("{{title}}").join("500 - " + e.message)
+                            .split("{{content}}").join(e.stack);
+                        res.writeHead(500, "text/html");
+                        res.end(output);
+                        output = null;
+                        server.sendmail({
+                            from: EMAIL,
+                            to: EMAIL,
+                            subject: 'Server error.',
+                            content: e.message + "\n\n" + e.stack + "\n\nIP: " + 
+                                req.connection.remoteAddress + "\nuser-agent: " + req.headers['user-agent']
+                        }, function(err, reply) {});
+                        nullOut();
+                    });
+                    errorTemplateUrl = null;
+                });
+            }
         }
     }
     function getConfig(url, type) {
@@ -191,6 +214,7 @@ server = (function () {
         // memwatch: require('memwatch'),
         path: require('path'),
         mime: require('mime'),
+        sendmail: require('sendmail')(),
         shared: [],
         cache: [],
         cached: []
